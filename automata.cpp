@@ -19,43 +19,80 @@ Automata::Automata(const std::string & file_path)
         
         and table discribing lambda and delta functions
             unordered_map<pair<state, data>, pair<state, data>>
-     */
+    */
 
-    std::fstream in_file;
+    std::ifstream in_file;
+    char*   temp_str;
 
-    in_file.open(file_path, std::ios::out | std::ios::in);
-    if(!in_file)
+    in_file.exceptions(std::ifstream::badbit);
+    try
     {
-        std::cerr << "Error: file could not be opened" << std::endl;
-        exit(1);
+        in_file.open(file_path, std::ios::out | std::ios::in);
     }
-    vector<vector<std::string>*> vecs = {&A, &B, &Q}; 
+    catch (const std::ifstream::failure& e)
+    {
+        std::cerr << "Exception opening/reading file";
+    }
+    vector<vector<std::string>*> vecs = {&A, &B, &Q};
     while (!in_file.eof())
     {
-        char temp[255];
         char *str = nullptr;
-        int counter = 0;
-        while (counter < 3 && in_file.getline(temp, 255))
+        std::string temp;
+
+        /* reading symbols for alphabet A, B, Q */
+        getline(in_file, temp);
+        if (temp == "")
         {
-            str = strtok(temp, ", ");
-            while (str != NULL)
-            {
-                vecs[counter]->push_back(str);
-                str = strtok(NULL, ", ");
-            }          
-            ++counter;
-            bzero(temp, 255);
+            continue;
         }
-        bzero(temp, 255);
-        counter = 0;
-        while (in_file.getline(temp, 255))
+        temp_str = const_cast<char *>(temp.c_str());
+        if (temp == "")
+        {
+            continue;
+        }
+        str = strtok(temp_str, ", ");
+        while (str != NULL)
+        {
+            A.push_back(str);
+            str = strtok(NULL, ", ");
+        }
+
+        getline(in_file, temp);
+        if (temp == "")
+        {
+            continue;
+        }
+        temp_str = const_cast<char *>(temp.c_str());
+        str = strtok(temp_str, ", ");
+        while (str != NULL)
+        {
+            B.push_back(str);
+            str = strtok(NULL, ", ");
+        }
+
+        getline(in_file, temp);
+        if (temp == "")
+        {
+            continue;
+        }
+        temp_str = const_cast<char *>(temp.c_str());
+        str = strtok(temp_str, ", ");
+        while (str != NULL)
+        {
+            Q.push_back(str);
+            str = strtok(NULL, ", ");
+        }
+
+        int counter = 0;
+        while (getline(in_file, temp))
         {
             int i = 0;
-            if (temp[0] == '\0') 
+            temp_str = const_cast<char*>(temp.c_str());
+            if (temp_str[0] == '\0') 
             {
                 continue;
             }
-            str = strtok(temp, " | ");
+            str = strtok(temp_str, " | ");
             std::string b;
             std::string q;
             std::string tempStr;
@@ -64,6 +101,10 @@ Automata::Automata(const std::string & file_path)
                 tempStr = str;
                 b = tempStr.substr(0, tempStr.find(','));
                 q = tempStr.substr(tempStr.find(',') + 1, tempStr.size() - 1);
+                if (q == "" || b == "")
+                {
+                    throw "not valid inputs b or q";
+                }
                 table.insert(std::make_pair(std::make_pair(Q[counter], A[i]), std::make_pair(q, b)));
                 str = strtok(NULL, " | ");
                 ++i;
